@@ -1,5 +1,6 @@
 import * as mobx from 'mobx';
 import { connectViaExtension } from 'remotedev';
+import _mapValues from 'lodash.mapvalues';
 import { createAction, getName } from './utils';
 import { isFiltered } from './filters';
 import { dispatchMonitorAction } from './monitorActions';
@@ -24,13 +25,19 @@ function configure(name, config = {}) {
   }
 }
 
+function filterStore(store, config) {
+  return _mapValues(store, it => {
+    return Object.assign(it, { [config.storeFilter]: 'circular' });
+  })
+}
+
 function init(store, config) {
-  const name = mobx.getDebugName(store);
+  const name = config.name || mobx.getDebugName(store);
   configure(name, config);
-  stores[name] = store;
+  stores[name] = config.storeFilter ? filterStore(store, config) : store;
 
   const devTools = connectViaExtension(config);
-  devTools.subscribe(dispatchMonitorAction(store, devTools, onlyActions[name]));
+  devTools.subscribe(dispatchMonitorAction(stores[name], devTools, onlyActions[name]));
   monitors[name] = devTools;
 }
 

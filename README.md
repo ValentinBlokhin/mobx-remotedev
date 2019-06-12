@@ -124,6 +124,10 @@ Use `runInAction` and don't forget about the second / third parameter which will
 
 Just set the `global` parameter to `true` like `remotedev(store, { global: true })`. If you want more details about the nested tree, see [#5](https://github.com/zalmoxisus/mobx-remotedev/pull/5).
 
+### How to use remote dev tools with RootStore pattern([mobx docs](https://mobx.js.org/best/store.html))
+
+Just set the `storeFilter` parameter to `rootStore` like `remotedev(store, { storeFilter: 'rootStore' })`. It will replace `rootStore` references inside child stores to `circular` string to prevent circular dependencies.
+
 ## LICENSE
 
 [MIT](LICENSE)
