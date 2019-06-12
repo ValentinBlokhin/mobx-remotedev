@@ -1,6 +1,6 @@
 import * as mobx from 'mobx';
 import { connectViaExtension } from 'remotedev';
-import _mapValues from 'lodash.mapvalues';
+import jsan from 'jsan';
 import { createAction, getName } from './utils';
 import { isFiltered } from './filters';
 import { dispatchMonitorAction } from './monitorActions';
@@ -25,26 +25,24 @@ function configure(name, config = {}) {
   }
 }
 
-function filterStore(store, config) {
-  return _mapValues(store, it => {
-    return Object.assign(it, { [config.storeFilter]: 'circular' });
-  })
+function handleCircular(store) {
+  return jsan.parse(jsan.stringify(store, null, null, { circular: '[CIRCULAR]'}) )
 }
 
 function init(store, config) {
   const name = config.name || mobx.getDebugName(store);
   configure(name, config);
-  stores[name] = config.storeFilter ? filterStore(store, config) : store;
+  stores[name] = store;
 
   const devTools = connectViaExtension(config);
-  devTools.subscribe(dispatchMonitorAction(stores[name], devTools, onlyActions[name]));
+  devTools.subscribe(dispatchMonitorAction(handleCircular(stores[name]), devTools, onlyActions[name]));
   monitors[name] = devTools;
 }
 
 function schedule(name, action) {
   let toSend;
   if (action && !isFiltered(action, filters[name])) {
-    toSend = () => { monitors[name].send(action, mobx.toJS(stores[name])); };
+    toSend = () => { monitors[name].send(action, handleCircular(stores[name]))};
   }
   scheduled.push(toSend);
 }
